@@ -1,16 +1,49 @@
 import glob
 import sys
 
+
+keywords = ["class","constructor","function","method","field","static",
+            "var","int","char","boolean","void","true","flase","null"
+            ,"this","let","do","if","else","while","return"]
+
+symbols = ["{","}","(",")","[","]",".",",",";","+","-","*","/","&","|","<",">","=","~"]
+
+
+    
+
 class Tokenizer():
 
     def __init__(self,file):
-        pass
+        newFileName = file.split("/").pop().split(".")[0] + "T.xml"
+        outputFilePath = file.replace(file.split("/").pop(),newFileName)
+        self.input = open(file,"r")
+        self.output = open(outputFilePath,"w")
+        self.tokens = []
+        
     
     def tokenize(self):
-        pass
+        el = self.readline()
+        while el != '':
+            # for ec in el:
+            #     print(ec)
+            el = self.readline()
+             
+    def readline(self):
+        el = self.input.readline()
+        if el.startswith("//") and el.startswith("/**"):
+            el = self.input.readline()
+        return el
+
 
 class Compiler():
-    pass
+
+    def __init__(self,file,tokenizer):
+        newFileName = file.split("/").pop().split(".")[0] + ".xml"
+        outputFilePath = file.replace(file.split("/").pop(),newFileName)
+        self.output = open(outputFilePath,"w")
+
+    def compile(self):
+        pass
 
 class Analyzer():
     
@@ -28,7 +61,8 @@ class Analyzer():
         for fp in self.files:
             tokenizer = Tokenizer(fp)
             tokenizer.tokenize()
-            # compiler = Compiler(fn,tokenizer)
+            compiler = Compiler(fp,tokenizer)
+            compiler.compile()
         
 
 
