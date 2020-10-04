@@ -303,6 +303,7 @@ class Compiler():
                 self.tokenizer.advance()
             self.compileStatements()
             self.printCurrentToken()
+            self.tokenizer.advance()
 
         self.printEndTag("ifStatement")
         self.output.write("\n")
@@ -374,14 +375,16 @@ class Compiler():
         self.printStrartTag("expression")
         self.output.write("\n")
 
+        counter = 0 
+
         while self.tokenizer.symbol() != ";" and self.tokenizer.symbol() != "]" and self.tokenizer.symbol() != ")" and self.tokenizer.symbol() != ",":
-            if self.tokenizer.symbol() in op: 
+            if self.tokenizer.symbol() in op and not (self.tokenizer.symbol() == "-" and counter == 0):
                 self.printCurrentToken()
                 self.tokenizer.advance()
             else:
                 self.compileTerm()
                 if self.tokenizer.symbol() != ";" and self.tokenizer.symbol() != "]" and self.tokenizer.symbol() != ")" and self.tokenizer.symbol() not in op  and self.tokenizer.symbol() != ",": self.tokenizer.advance()
-
+            counter = counter + 1
 
         self.printEndTag("expression")
         self.output.write("\n")
@@ -399,6 +402,10 @@ class Compiler():
             self.printCurrentToken()
             self.tokenizer.advance()
         else:
+            if self.tokenizer.symbol() == "-":
+                self.printCurrentToken()
+                self.tokenizer.advance()
+                self.compileTerm()
             while self.tokenizer.symbol() != ")" and self.tokenizer.symbol() != "]" and self.tokenizer.symbol() != ";" and self.tokenizer.symbol() not in op and self.tokenizer.symbol() != ",":
                 if self.tokenizer.tokenType() == "integerConstant" or self.tokenizer.tokenType() == "stringConstant" or self.tokenizer.keyWord() in keywordConstants :
                     self.printCurrentToken()
