@@ -93,7 +93,12 @@ class Tokenizer():
 
     def keyWord(self): return self.tokens[self.currentToken]
 
-    def symbol(self): return self.tokens[self.currentToken] 
+    def symbol(self):
+        if self.tokens[self.currentToken] == "<": return "&lt;"
+        elif self.tokens[self.currentToken] == ">": return "&gt;"
+        elif self.tokens[self.currentToken] == "&": return "&amp;"
+        elif self.tokens[self.currentToken] == '"': return "&quot"
+        else: return self.tokens[self.currentToken] 
 
     def identifier(self): return self.tokens[self.currentToken] 
 
@@ -109,7 +114,49 @@ class Compiler():
         outputFilePath = file.replace(file.split("/").pop(),newFileName)
         self.output = open(outputFilePath,"w")
 
-    def compile(self):
+    def compileClass(self):
+        pass
+
+    def compileClassVarDec(self):
+        pass
+    
+    def compileClassSubroutineDec(self):
+        pass
+    
+    def compileParameterList(self):
+        pass
+
+    def compileSubroutineBody(self):
+        pass
+
+    def compileVarDec(self):
+        pass
+
+    def compileStatements(self):
+        pass
+
+    def compileLet(self):
+        pass
+
+    def compileIf(self):
+        pass
+
+    def compileWhile(self):
+        pass
+
+    def compileDo(self):
+        pass
+
+    def compileReturn(self):
+        pass
+
+    def compileExpression(self):
+        pass
+
+    def compileTerm(self):
+        pass
+
+    def compileExpressionList(self):
         pass
 
 class Analyzer():
