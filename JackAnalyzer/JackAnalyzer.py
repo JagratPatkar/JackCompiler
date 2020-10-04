@@ -7,7 +7,9 @@ keywords = ["class","constructor","function","method","field","static",
             ,"this","let","do","if","else","while","return"]
 symbols = ["{","}","(",")","[","]",".",",",";","+","-","*","/","&","|","<",">","=","~"]
 alphabets = ["a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z","A","B","C","D","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"]
-
+keywordConstants = ["true","false","null","this"]
+op = ["+","-","*","/","&","|","<",">","="]
+unaryOp = ["~","-"]
 class Tokenizer():
 
     def __init__(self,file):
@@ -234,31 +236,106 @@ class Compiler():
         self.printEndTag("statements")
 
     def compileLet(self):
-        pass
+        self.printStrartTag("letStatement")
+        self.output.write("\n")
+
+        for i in range(2):
+            self.printCurrentToken()
+            self.tokenizer.advance()
+            if self.tokenizer.symbol() == "[":
+                self.printCurrentToken()
+                self.tokenizer.advance()
+                self.compileExpression()
+                self.printCurrentToken()
+
+
+        self.compileExpression()
+        self.printCurrentToken()#Printing ;
+        self.printEndTag("letStatement")
 
     def compileIf(self):
-        pass
+        self.printStrartTag("ifStatement")
+        self.output.write("\n")
+
+
+
+        self.printEndTag("ifStatement")
 
     def compileWhile(self):
-        pass
+        self.printStrartTag("whileStatement")
+        self.output.write("\n")
+
+
+
+        self.printEndTag("whileStatement")
 
     def compileDo(self):
-        pass
+        self.printStrartTag("doStatement")
+        self.output.write("\n")
+
+
+
+        self.printEndTag("doStatement")
 
     def compileReturn(self):
-        pass
+        self.printStrartTag("returnStatement")
+        self.output.write("\n")
+
+
+
+        self.printEndTag("returnStatement")
 
     def compileExpression(self):
         self.printStrartTag("expression")
         self.output.write("\n")
-        
+
+        while self.tokenizer.symbol() != ";" and self.tokenizer.symbol() != "]" and self.tokenizer.symbol() != ")":
+            if self.tokenizer.symbol() in op: self.printCurrentToken()
+            else: self.compileTerm()
+            if self.tokenizer.symbol() not in op: self.tokenizer.advance()
+
+
         self.printEndTag("expression")
 
     def compileTerm(self):
-        pass
+        self.printStrartTag("term")
+        self.output.write("\n")
+
+        while self.tokenizer.symbol() != ")" and self.tokenizer.symbol() != "]" and self.tokenizer.symbol() != ";" and self.tokenizer.symbol() not in op:
+
+            if self.tokenizer.symbol() == "(":
+                
+                self.printCurrentToken()
+                
+                self.tokenizer.advance()
+                self.compileExpression()
+                self.printCurrentToken()
+
+            elif self.tokenizer.symbol() == "[":
+
+                self.printCurrentToken()
+                self.tokenizer.advance()
+                self.compileExpression()
+                self.printCurrentToken()
+
+            elif self.tokenizer.tokenType() == "integerContant" or self.tokenizer.tokenType() == "stringContstant" or self.tokenizer.keyWord() in keywordConstants or self.tokenizer.tokenType() == "identifier" or self.tokenizer.symbol() in unaryOp:
+                self.printCurrentToken()
+                self.tokenizer.advance()
+            elif 
+
+
+        self.printEndTag("term")
 
     def compileExpressionList(self):
-        pass
+        self.printStrartTag("expressionlist")
+        self.output.write("\n")
+
+        while self.tokenizer.symbol() != ")":
+            if self.tokenizer.symbol() == "," : self.printCurrentToken()
+            else : self.compileExpression()
+            self.tokenizer.advance()
+
+        self.printEndTag("expressionlist")
 
 class Analyzer():
     
@@ -277,7 +354,7 @@ class Analyzer():
             tokenizer = Tokenizer(fp)
             tokenizer.tokenize()
             tokenizer.printTokens()
-            compiler = Compiler(fp,tokenizer)
+            Compiler(fp,tokenizer)
     
 
 def main():
