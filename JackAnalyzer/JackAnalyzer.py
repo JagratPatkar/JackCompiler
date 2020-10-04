@@ -8,7 +8,7 @@ keywords = ["class","constructor","function","method","field","static",
 symbols = ["{","}","(",")","[","]",".",",",";","+","-","*","/","&","|","<",">","=","~"]
 alphabets = ["a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z","A","B","C","D","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"]
 keywordConstants = ["true","false","null","this"]
-op = ["+","-","*","/","&","|","<",">","="]
+op = ["+","-","*","/","&amp;","|","&lt;","&gt;","="]
 unaryOp = ["~","-"]
 
 
@@ -25,7 +25,7 @@ class Tokenizer():
     def tokenize(self):
         el = self.input.readline()
         while el != '':
-            if not el.startswith("//") and not el.startswith("/**"):
+            if not el.startswith("//") and not el.startswith("/**") and not el.startswith(" *"):
                 el = self.serialize(el)
                 i = 0
                 while i < len(el):
@@ -43,7 +43,8 @@ class Tokenizer():
                             token = el[i]
                             i = i + 1
                             if i < len(el):
-                                while el[i] != " ": 
+                               
+                                while el[i] != " " and el[i] != "\n" and el[i] != "\r" and el[i] != "\t": 
                                     token = token + el[i]
                                     i = i + 1
                             self.tokens.append(token)
@@ -51,8 +52,13 @@ class Tokenizer():
             el = self.input.readline()
 
     def serialize(self,line):
+        line = line.split("//")
+        line = line[0]
+        line = line.split("/**")
+        line = line[0]
         for i in symbols:
             if i in line:line = line.replace(i," " + i + " ")
+        
         return line
 
     def printTokens(self):
@@ -135,7 +141,11 @@ class Compiler():
 
     def printCurrentToken(self):
         self.printStrartTag(self.tokenizer.tokenType())
-        self.output.write(self.tokenizer.keyWord())
+        if self.tokenizer.tokenType() == "keyword": self.output.write(self.tokenizer.keyWord())
+        elif self.tokenizer.tokenType() == "symbol": self.output.write(self.tokenizer.symbol())
+        elif self.tokenizer.tokenType() == "identifier": self.output.write(self.tokenizer.identifier())
+        elif self.tokenizer.tokenType() == "stringConstant": self.output.write(self.tokenizer.stringVal())
+        elif self.tokenizer.tokenType() == "integerConstant": self.output.write(self.tokenizer.intVal())
         self.printEndTag(self.tokenizer.tokenType())
         self.output.write("\n")
 
@@ -235,13 +245,17 @@ class Compiler():
     def compileStatements(self):
         self.printStrartTag("statements")
         self.output.write("\n")
+       
         while self.tokenizer.tokenType() != "symbol":
+            toEx = True
             if self.tokenizer.keyWord() == "let": self.compileLet()
-            elif self.tokenizer.keyWord() == "if": self.compileIf()
+            elif self.tokenizer.keyWord() == "if": 
+                self.compileIf()
+                toEx = False
             elif self.tokenizer.keyWord() == "while": self.compileWhile()
             elif self.tokenizer.keyWord() == "do": self.compileDo()
             elif self.tokenizer.keyWord() == "return": self.compileReturn()
-            self.tokenizer.advance()
+            if toEx : self.tokenizer.advance()
         self.printEndTag("statements")
         self.output.write("\n")
 
@@ -257,7 +271,7 @@ class Compiler():
                 self.tokenizer.advance()
                 self.compileExpression()
                 self.printCurrentToken()
-
+                self.tokenizer.advance()
 
         self.compileExpression()
         self.printCurrentToken()#Printing ;
@@ -289,7 +303,6 @@ class Compiler():
                 self.tokenizer.advance()
             self.compileStatements()
             self.printCurrentToken()
-            self.tokenizer.advance()
 
         self.printEndTag("ifStatement")
         self.output.write("\n")
@@ -311,7 +324,6 @@ class Compiler():
         self.compileStatements()
 
         self.printCurrentToken()
-        self.tokenizer.advance()
 
         self.printEndTag("whileStatement")
         self.output.write("\n")
@@ -334,9 +346,10 @@ class Compiler():
 
         self.compileExpressionList()
 
-        for i in range(2):
-            self.printCurrentToken()
-            self.tokenizer.advance()
+        
+        self.printCurrentToken()
+        self.tokenizer.advance()
+        self.printCurrentToken()
 
         self.printEndTag("doStatement")
         self.output.write("\n")
@@ -353,7 +366,6 @@ class Compiler():
 
         
         self.printCurrentToken()
-        self.tokenizer.advance()
 
         self.printEndTag("returnStatement")
         self.output.write("\n")
@@ -362,13 +374,13 @@ class Compiler():
         self.printStrartTag("expression")
         self.output.write("\n")
 
-        while self.tokenizer.symbol() != ";" and self.tokenizer.symbol() != "]" and self.tokenizer.symbol() != ")":
+        while self.tokenizer.symbol() != ";" and self.tokenizer.symbol() != "]" and self.tokenizer.symbol() != ")" and self.tokenizer.symbol() != ",":
             if self.tokenizer.symbol() in op: 
                 self.printCurrentToken()
                 self.tokenizer.advance()
             else:
                 self.compileTerm()
-                if self.tokenizer.symbol() != ";" and self.tokenizer.symbol() != "]" and self.tokenizer.symbol() != ")" and self.tokenizer.symbol() not in op: self.tokenizer.advance()
+                if self.tokenizer.symbol() != ";" and self.tokenizer.symbol() != "]" and self.tokenizer.symbol() != ")" and self.tokenizer.symbol() not in op  and self.tokenizer.symbol() != ",": self.tokenizer.advance()
 
 
         self.printEndTag("expression")
@@ -385,14 +397,19 @@ class Compiler():
             self.tokenizer.advance()
             self.compileExpression()
             self.printCurrentToken()
+            self.tokenizer.advance()
         else:
-            while self.tokenizer.symbol() != ")" and self.tokenizer.symbol() != "]" and self.tokenizer.symbol() != ";" and self.tokenizer.symbol() not in op:
-                if self.tokenizer.tokenType() == "integerContant" or self.tokenizer.tokenType() == "stringContstant" or self.tokenizer.keyWord() in keywordConstants or self.tokenizer.symbol() in unaryOp:
+            while self.tokenizer.symbol() != ")" and self.tokenizer.symbol() != "]" and self.tokenizer.symbol() != ";" and self.tokenizer.symbol() not in op and self.tokenizer.symbol() != ",":
+                if self.tokenizer.tokenType() == "integerConstant" or self.tokenizer.tokenType() == "stringConstant" or self.tokenizer.keyWord() in keywordConstants :
                     self.printCurrentToken()
                     self.tokenizer.advance()
+                elif self.tokenizer.symbol() in unaryOp:
+                     self.printCurrentToken()
+                     self.tokenizer.advance()
+                     self.compileTerm()
                 elif self.tokenizer.symbol() == "(":
                     self.compileTerm()
-                    self.tokenizer.advance()
+                    # self.tokenizer.advance()
                 elif self.tokenizer.tokenType() == "identifier":
                     self.printCurrentToken()
                     self.tokenizer.advance()
@@ -412,19 +429,23 @@ class Compiler():
                         self.printCurrentToken()
                         self.tokenizer.advance()
 
+       
         self.printEndTag("term")
         self.output.write("\n")
 
     def compileExpressionList(self):
-        self.printStrartTag("expressionlist")
+        self.printStrartTag("expressionList")
         self.output.write("\n")
 
         while self.tokenizer.symbol() != ")":
-            if self.tokenizer.symbol() == "," : self.printCurrentToken()
-            else : self.compileExpression()
-            self.tokenizer.advance()
+            if self.tokenizer.symbol() == "," : 
+                self.printCurrentToken()
+                self.tokenizer.advance()
+            else:
+                self.compileExpression()
+                if self.tokenizer.symbol() != ")" and self.tokenizer.symbol() != ",": self.tokenizer.advance()
 
-        self.printEndTag("expressionlist")
+        self.printEndTag("expressionList")
         self.output.write("\n")
 
 class Analyzer():
