@@ -2,10 +2,48 @@ import glob
 import sys
 from Tokenizer import *
 
+
+class SymbolTable:
+
+    def __init__(self):
+        self.table = []
+        self.fieldConter = 0
+        self.staticCounter = 0
+        self.argumentCounter = 1
+        self.localConter = 0
+    
+    def addVar(self,name,varType,kind):
+        temp = {
+            "name":name,
+            "type":varType,
+            "kind":kind
+        }
+
+        if kind == "field":
+            temp["#"] = self.fieldConter
+            self.incrementFieldCounter()
+        elif kind == "static":
+            temp["#"] = self.staticCounter
+            self.incrementStaticCounter()
+        elif kind == "argument":
+            temp["#"] = self.argumentCounter
+            self.incrementArgumentCounter()
+        elif kind == "local":
+            temp["#"] = self.localConter
+            self.incrementLocalCounter()
+
+        
+
+    def incrementFieldCounter(self): self.fieldConter = self.fieldConter + 1
+    def incrementArgumentCounter(self): self.argumentConter = self.argumentConter + 1
+    def incrementStaticCounter(self): self.staticCounter = self.staticCounter + 1
+    def incrementLocalCounter(self): self.localConter = self.localConter + 1
+
+
 class Compiler():
 
     def __init__(self,file,tokenizer):
-        newFileName = file.split("/").pop().split(".")[0] + ".xml"
+        newFileName = file.split("/").pop().split(".")[0] + ".vm"
         outputFilePath = file.replace(file.split("/").pop(),newFileName)
         self.output = open(outputFilePath,"w")
         self.tokenizer = tokenizer
@@ -337,7 +375,7 @@ class Compiler():
         self.printEndTag("expressionList")
         self.output.write("\n")
 
-class Compile():
+class Analyzer():
     
     def __init__(self,path):
         self.path = path
@@ -357,7 +395,8 @@ class Compile():
 
 def main():
     path = sys.argv[1]
-    compiler = Compile(path)
+    analyzer = Analyzer(path)
+    analyzer.analyze()
 
 if __name__ == "__main__":
     main()
