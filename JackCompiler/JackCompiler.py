@@ -7,6 +7,7 @@ class SymbolTable:
 
     def __init__(self):
         self.table = []
+        self.parent = None
         self.fieldConter = 0
         self.staticCounter = 0
         self.argumentCounter = 1
@@ -18,7 +19,6 @@ class SymbolTable:
             "type":varType,
             "kind":kind
         }
-
         if kind == "field":
             temp["#"] = self.fieldConter
             self.incrementFieldCounter()
@@ -31,8 +31,10 @@ class SymbolTable:
         elif kind == "local":
             temp["#"] = self.localConter
             self.incrementLocalCounter()
+        self.table.append(temp)
 
-        
+    def resetTable(self):
+        self.table = []
 
     def incrementFieldCounter(self): self.fieldConter = self.fieldConter + 1
     def incrementArgumentCounter(self): self.argumentConter = self.argumentConter + 1
