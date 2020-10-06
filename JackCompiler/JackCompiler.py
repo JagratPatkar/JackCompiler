@@ -7,11 +7,10 @@ class SymbolTable:
 
     def __init__(self):
         self.table = []
-        self.parent = None
-        self.fieldConter = 0
+        self.fieldCounter = 0
         self.staticCounter = 0
-        self.argumentCounter = 1
-        self.localConter = 0
+        self.argumentCounter = 0
+        self.localCounter = 0
     
     def addVar(self,name,varType,kind):
         temp = {
@@ -20,7 +19,7 @@ class SymbolTable:
             "kind":kind
         }
         if kind == "field":
-            temp["#"] = self.fieldConter
+            temp["#"] = self.fieldCounter
             self.incrementFieldCounter()
         elif kind == "static":
             temp["#"] = self.staticCounter
@@ -29,17 +28,37 @@ class SymbolTable:
             temp["#"] = self.argumentCounter
             self.incrementArgumentCounter()
         elif kind == "local":
-            temp["#"] = self.localConter
+            temp["#"] = self.localCounter
             self.incrementLocalCounter()
         self.table.append(temp)
 
+
+    def printTable(self):
+        print("------------",self.name,"---------------")
+        print("------------Table---------------")
+        for i in self.table:
+            print(i)
+        print("--------------------------------")
+
     def resetTable(self):
         self.table = []
+        self.staticCounter = 0
+        self.argumentCounter = 0
 
-    def incrementFieldCounter(self): self.fieldConter = self.fieldConter + 1
-    def incrementArgumentCounter(self): self.argumentConter = self.argumentConter + 1
+    def kindOf(self,name):
+
+        for i in self.table:
+            if name in self.table.values():
+                
+
+
+    def initThis(self): self.addVar("this",self.parent.name,"argument")
+    def setParent(self,parent): self.parent = parent
+    def setName(self,name): self.name = name
+    def incrementFieldCounter(self): self.fieldCounter = self.fieldCounter + 1
+    def incrementArgumentCounter(self): self.argumentCounter = self.argumentCounter + 1
     def incrementStaticCounter(self): self.staticCounter = self.staticCounter + 1
-    def incrementLocalCounter(self): self.localConter = self.localConter + 1
+    def incrementLocalCounter(self): self.localCounter = self.localCounter + 1
 
 
 class Compiler():
@@ -49,7 +68,11 @@ class Compiler():
         outputFilePath = file.replace(file.split("/").pop(),newFileName)
         self.output = open(outputFilePath,"w")
         self.tokenizer = tokenizer
+        self.classSymbolTable = SymbolTable()
+        self.subroutineSymbolTable = SymbolTable()
+        self.subroutineSymbolTable.setParent(self.classSymbolTable)
         self.compileClass()
+        self.classSymbolTable.printTable()
 
     def printStrartTag(self,str):
         self.output.write("<")
@@ -78,6 +101,7 @@ class Compiler():
 
         for i in range(3):
             self.tokenizer.advance()
+            if i == 1: self.classSymbolTable.setName(self.tokenizer.identifier())
             self.printCurrentToken()
         
         self.tokenizer.advance()
@@ -99,8 +123,18 @@ class Compiler():
         self.printStrartTag("classVarDec")
         self.output.write("\n")
 
+        kind = self.tokenizer.keyWord()
+        self.tokenizer.advance() 
+        if self.tokenizer.tokenType() == "keyword" :
+             varType = self.tokenizer.keyWord() 
+        elif self.tokenizer.tokenType() == "identifier": 
+            varType = self.tokenizer.identifier() 
+        self.tokenizer.advance()
+
         while self.tokenizer.symbol() != ";":
             self.printCurrentToken()
+            if self.tokenizer.tokenType() == "identifier" :
+                self.classSymbolTable.addVar(self.tokenizer.identifier(),varType,kind) 
             self.tokenizer.advance()
 
         self.printCurrentToken()
@@ -111,8 +145,19 @@ class Compiler():
     def compileClassSubroutineDec(self):
         self.printStrartTag("subroutineDec")
         self.output.write("\n")
+        
+        if self.tokenizer.keyWord() == "function" : 
+            self.tokenizer.advance()
+            self.tokenizer.advance()
+            self.subroutineSymbolTable.setName(self.tokenizer.identifier())
+        else:
+            self.tokenizer.advance()
+            self.tokenizer.advance()
+            self.subroutineSymbolTable.setName(self.tokenizer.identifier())
+            self.subroutineSymbolTable.initThis()
 
-        for i in range(4):
+
+        for i in range(2):
             self.printCurrentToken()
             self.tokenizer.advance()
 
@@ -120,16 +165,25 @@ class Compiler():
         self.printCurrentToken()
         self.tokenizer.advance()
         self.compileSubroutineBody()
+        self.subroutineSymbolTable.printTable()
+        self.subroutineSymbolTable.resetTable()
         self.printEndTag("subroutineDec")
         self.output.write("\n")
 
     def compileParameterList(self):
         self.printStrartTag("parameterList")
         self.output.write("\n")
-        
+        varType = None
         while self.tokenizer.symbol() != ")":
-            self.printCurrentToken()
-            self.tokenizer.advance()
+           
+            if self.tokenizer.symbol() != ",":
+                if self.tokenizer.tokenType() == "keyword" : varType = self.tokenizer.keyWord()
+                if self.tokenizer.tokenType() == "identifier" : varType = self.tokenizer.identifier()
+                self.tokenizer.advance()
+                if self.tokenizer.tokenType() == "identifier" :self.subroutineSymbolTable.addVar(self.tokenizer.identifier(),varType,"argument")
+                self.tokenizer.advance()
+            else:
+                self.tokenizer.advance()
 
         self.printEndTag("parameterList")
         self.output.write("\n")
@@ -156,9 +210,17 @@ class Compiler():
         self.printStrartTag("varDec")
         self.output.write("\n")
 
+        self.tokenizer.advance() 
+        if self.tokenizer.tokenType() == "keyword" :
+             varType = self.tokenizer.keyWord() 
+        elif self.tokenizer.tokenType() == "identifier": 
+            varType = self.tokenizer.identifier() 
+        self.tokenizer.advance()
         while self.tokenizer.symbol() != ";":
             self.printCurrentToken()
-            self.tokenizer.advance()
+            if self.tokenizer.tokenType() == "identifier" : self.subroutineSymbolTable.addVar(self.tokenizer.identifier(),varType,"local")
+            self.tokenizer.advance()    
+            
 
         self.printCurrentToken()
         self.printEndTag("varDec")
@@ -392,6 +454,7 @@ class Analyzer():
     def analyze(self):
         for fp in self.files:
             tokenizer = Tokenizer(fp)
+            tokenizer.tokenize()
             Compiler(fp,tokenizer)
     
 

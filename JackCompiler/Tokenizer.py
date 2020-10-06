@@ -18,6 +18,7 @@ class Tokenizer():
         self.tokens = []
         self.currentToken = -1
         
+        
     def tokenize(self):
         el = self.input.readline()
         while el != '':
