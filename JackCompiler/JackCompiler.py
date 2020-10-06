@@ -50,7 +50,7 @@ class SymbolTable:
 
     def indexOf(self,name):
         for i in self.table: 
-            if name in i.values():return i["#"]
+            if name in i.values():return str(i["#"])
         if self.parent != None : return self.parent.typeOf(name) 
 
     def initThis(self): self.addVar("this",self.parent.name,"argument")
@@ -86,16 +86,17 @@ class CompilationEngine():
 
 
     def isClass(self):
-        self.output.write(" <")
+        self.output.write("<")
         self.output.write("category")
         self.output.write("> ")
         self.output.write("class")
         self.output.write(" </")
         self.output.write("category")
         self.output.write("> ")
+        self.output.write("\n")
 
     def isVar(self,kind,index):
-        self.output.write(" <")
+        self.output.write("<")
         self.output.write("category")
         self.output.write("> ")
         self.output.write(kind)
@@ -103,13 +104,14 @@ class CompilationEngine():
         self.output.write("category")
         self.output.write("> ")
         self.output.write("\n")
-        self.output.write(" <")
+        self.output.write("<")
         self.output.write("index")
         self.output.write("> ")
         self.output.write(index)
         self.output.write(" </")
         self.output.write("index")
         self.output.write("> ")
+        self.output.write("\n")
 
     
 
@@ -134,8 +136,6 @@ class CompilationEngine():
             self.printCurrentToken()
             if i == 1: 
                 self.classSymbolTable.setName(self.tokenizer.identifier())
-                self.isClass()
-
 
         self.tokenizer.advance()
 
@@ -168,8 +168,8 @@ class CompilationEngine():
                 if self.tokenizer.tokenType() == "identifier" :  varType = self.tokenizer.identifier()
                 elif self.tokenizer.tokenType() == "keyword" : varType = self.tokenizer.keyWord()  
             if self.tokenizer.symbol() != "," and counter != 1:
-                self.classSymbolTable.addVar(self.tokenizer.keyWord(),varType,kind)
-                self.isVar(self.classSymbolTable.kindOf(self.tokenizer.keyWord()),self.classSymbolTable.indexOf(self.tokenizer.keyWord()))
+                self.classSymbolTable.addVar(self.tokenizer.identifier(),varType,kind)
+                self.isVar(self.classSymbolTable.kindOf(self.tokenizer.identifier()),self.classSymbolTable.indexOf(self.tokenizer.identifier()))
             self.tokenizer.advance()
             counter = counter + 1
 
@@ -195,14 +195,24 @@ class CompilationEngine():
         self.compileSubroutineBody()
         self.printEndTag("subroutineDec")
         self.output.write("\n")
+        self.subroutineSymbolTable.resetTable()
 
     def compileParameterList(self):
         self.printStrartTag("parameterList")
         self.output.write("\n")
         
+        counter = 1
+
         while self.tokenizer.symbol() != ")":
             self.printCurrentToken()
+            if counter%2 == 1 and self.tokenizer.symbol() != ",":
+                if self.tokenizer.tokenType() == "identifier" :  varType = self.tokenizer.identifier()
+                elif self.tokenizer.tokenType() == "keyword" : varType = self.tokenizer.keyWord() 
+            elif counter%2 == 0 :
+                self.classSymbolTable.addVar(self.tokenizer.identifier(),varType,"argument")
+                self.isVar(self.classSymbolTable.kindOf(self.tokenizer.identifier()),self.classSymbolTable.indexOf(self.tokenizer.identifier()))
             self.tokenizer.advance()
+            counter = counter + 1
 
         self.printEndTag("parameterList")
         self.output.write("\n")
@@ -229,10 +239,20 @@ class CompilationEngine():
         self.printStrartTag("varDec")
         self.output.write("\n")
 
+        counter = 0
+        varType = None
+
         while self.tokenizer.symbol() != ";":
             self.printCurrentToken()
+            if counter == 1:
+                if self.tokenizer.tokenType() == "identifier" :  varType = self.tokenizer.identifier()
+                elif self.tokenizer.tokenType() == "keyword" : varType = self.tokenizer.keyWord() 
+            elif counter > 1 and self.tokenizer.symbol() != ",":
+                self.classSymbolTable.addVar(self.tokenizer.identifier(),varType,"local")
+                self.isVar(self.classSymbolTable.kindOf(self.tokenizer.identifier()),self.classSymbolTable.indexOf(self.tokenizer.identifier()))
             self.tokenizer.advance()
-
+            counter = counter + 1
+        
         self.printCurrentToken()
         self.printEndTag("varDec")
         self.output.write("\n")
@@ -260,6 +280,7 @@ class CompilationEngine():
 
         for i in range(3):
             self.printCurrentToken()
+            
             self.tokenizer.advance()
             if self.tokenizer.symbol() == "[":
                 self.printCurrentToken()
