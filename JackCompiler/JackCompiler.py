@@ -62,13 +62,16 @@ class SymbolTable:
     def incrementLocalCounter(self): self.localCounter = self.localCounter + 1
 
 
-class Compiler():
+class CompilationEngine():
 
     def __init__(self,file,tokenizer):
         newFileName = file.split("/").pop().split(".")[0] + ".xml"
         outputFilePath = file.replace(file.split("/").pop(),newFileName)
         self.output = open(outputFilePath,"w")
         self.tokenizer = tokenizer
+        self.classSymbolTable = SymbolTable()
+        self.subroutineSymbolTable = SymbolTable()
+        self.subroutineSymbolTable.setParent(self.classSymbolTable)
         self.compileClass()
 
     def printStrartTag(self,str):
@@ -82,6 +85,7 @@ class Compiler():
         self.output.write(">")
 
     def printCurrentToken(self):
+
         self.printStrartTag(self.tokenizer.tokenType())
         if self.tokenizer.tokenType() == "keyword": self.output.write(self.tokenizer.keyWord())
         elif self.tokenizer.tokenType() == "symbol": self.output.write(self.tokenizer.symbol())
@@ -99,7 +103,9 @@ class Compiler():
         for i in range(3):
             self.tokenizer.advance()
             self.printCurrentToken()
-        
+            if i == 1: self.classSymbolTable.setName(self.tokenizer.identifier())
+                
+
         self.tokenizer.advance()
 
         while self.tokenizer.keyWord() == "static" or self.tokenizer.keyWord() == "field":
@@ -414,6 +420,7 @@ class Analyzer():
         for fp in self.files:
             tokenizer = Tokenizer(fp)
             tokenizer.tokenize()
+            CompilationEngine(fp,tokenizer)
 
     
 
