@@ -280,7 +280,7 @@ class CompilationEngine():
 
         for i in range(3):
             self.printCurrentToken()
-            
+            if i == 1: self.isVar(self.subroutineSymbolTable.kindOf(self.tokenizer.identifier()),self.subroutineSymbolTable.indexOf(self.tokenizer.identifier()))
             self.tokenizer.advance()
             if self.tokenizer.symbol() == "[":
                 self.printCurrentToken()
