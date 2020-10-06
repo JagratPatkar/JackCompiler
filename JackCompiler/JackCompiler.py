@@ -95,6 +95,16 @@ class CompilationEngine():
         self.output.write("> ")
         self.output.write("\n")
 
+    def isSub(self):
+        self.output.write("<")
+        self.output.write("category")
+        self.output.write("> ")
+        self.output.write("subroutine")
+        self.output.write(" </")
+        self.output.write("category")
+        self.output.write("> ")
+        self.output.write("\n")
+
     def isVar(self,kind,index):
         self.output.write("<")
         self.output.write("category")
@@ -432,9 +442,13 @@ class CompilationEngine():
                      self.compileTerm()
                 elif self.tokenizer.symbol() == "(":
                     self.compileTerm()
-                    # self.tokenizer.advance()
                 elif self.tokenizer.tokenType() == "identifier":
                     self.printCurrentToken()
+                    flag = False
+                    ko = self.subroutineSymbolTable.kindOf(self.tokenizer.identifier())
+                    io = self.subroutineSymbolTable.indexOf(self.tokenizer.identifier())
+                    if ko == None:flag = True
+                    else: self.isVar(ko,io)
                     self.tokenizer.advance()
                     if self.tokenizer.symbol() == "[":
                         self.printCurrentToken()
@@ -443,9 +457,11 @@ class CompilationEngine():
                         self.printCurrentToken()
                         self.tokenizer.advance()
                     elif self.tokenizer.symbol() == ".":
+                        if flag: self.isClass()
                         self.printCurrentToken()
                         self.tokenizer.advance()
                     if self.tokenizer.symbol() == "(":
+                        if flag: self.isClass()
                         self.printCurrentToken()
                         self.tokenizer.advance()
                         self.compileExpressionList()
