@@ -72,9 +72,9 @@ class VMWriter():
         outputFilePath = file.replace(file.split("/").pop(),newFileName)
         self.output = open(outputFilePath,"w")
 
-    def writePush(self,segment,index): self.output.write("push ",segment," ",index,"\n")
+    def writePush(self,segment,index): self.output.write("push "+segment+" "+index+"\n")
 
-    def writePop(self,segment,index): self.output.write("pop ",segment," ",index,"\n")
+    def writePop(self,segment,index): self.output.write("pop "+segment+" "+index+"\n")
 
     def writeArithmetic(self,command):
         if command == "+": self.output.write("add\n")
@@ -88,15 +88,15 @@ class VMWriter():
         elif command == "~": self.output.write("not\n")
         elif command == "neg": self.output.write("neg\n")
 
-    def writeLable(self,lable): self.output.write("lable ",lable,"\n")
+    def writeLable(self,lable): self.output.write("lable "+lable+"\n")
 
-    def writeGoto(self,lable): self.output.write("goto ",lable,"\n")
+    def writeGoto(self,lable): self.output.write("goto "+lable+"\n")
 
-    def writeIf(self,lable): self.output.write("if-goto ",lable,"\n")
+    def writeIf(self,lable): self.output.write("if-goto "+lable+"\n")
 
-    def writeCall(self,name,nArgs): self.output.write("call ",name," ",nArgs,"\n")
+    def writeCall(self,name,nArgs): self.output.write("call "+name+" "+nArgs+"\n")
 
-    def writeFunction(self,name,nArgs): self.output.write("function ",name," ",nArgs,"\n")
+    def writeFunction(self,name,nArgs): self.output.write("function "+name+" "+nArgs+"\n")
 
     def writeReturn(self): self.output.write("return\n")
 
@@ -282,19 +282,31 @@ class CompilationEngine():
         
         self.tokenizer.advance()
         name = self.tokenizer.identifier()
+        ko = self.subroutineSymbolTable.kindOf(self.tokenizer.identifier())
+        io = self.subroutineSymbolTable.indexOf(self.tokenizer.identifier())
+        if ko == None: flag = True
         self.tokenizer.advance()
+
         if self.tokenizer.symbol() == "(":
             
             self.tokenizer.advance()
-            self.compileExpressionList()
+            nArgs = self.compileExpressionList()
             self.tokenizer.advance()
-            
-
-
+            self.writer.writeCall(self.classSymbolTable.name + "." + name,nArgs)
         elif self.tokenizer.symbol() == ".":
-            for i in range(2):
-                self.tokenizer.advance()
+            
+            self.tokenizer.advance()
+            subName = self.tokenizer.identifier()
+            self.tokenizer.advance()
+            self.tokenizer.advance()
+            nArgs = self.compileExpressionList()
+            self.tokenizer.advance()
+            if flag: self.writer.writeCall(name + "." + subName,nArgs)
+            else:
+                clsName = self.subroutineSymbolTable.typeOf(name)
+                self.writer.writeCall(clsName + "." + subName,nArgs)
 
+        self.writer.writePop("temp","0")
         
 
     def compileReturn(self):
@@ -334,15 +346,15 @@ class CompilationEngine():
                     sym = self.tokenizer.symbol()
                     self.tokenizer.advance()
                     self.compileTerm()
-                    self.tokenizer.advance()
                     self.writer.writeArithmetic(sym)
+
                 elif self.tokenizer.tokenType() == "integerConstant":
                     self.writer.writePush("constant",self.tokenizer.intVal())
                     self.tokenizer.advance()
                 elif self.tokenizer.tokenType() == "stringConstant":
-                    pass
+                    self.tokenizer.advance()
                 elif self.tokenizer.keyWord() in keywordConstants:
-                    pass
+                    self.tokenizer.advance()
                 elif self.tokenizer.symbol() in unaryOp:
                      sym = self.tokenizer.symbol()
                      self.tokenizer.advance()
@@ -370,16 +382,16 @@ class CompilationEngine():
                         self.tokenizer.advance()
                         nArgs = self.compileExpressionList()
                         self.tokenizer.advance()
-                        if flag: self.writer.writeCall(name + subName,nArgs)
+                        if flag: self.writer.writeCall(name + "." + subName,nArgs)
                         else:
                             clsName = self.subroutineSymbolTable.typeOf(name)
-                            self.writer.writeCall(clsName + subName,nArgs)
+                            self.writer.writeCall(clsName + "." + subName,nArgs)
 
                     elif self.tokenizer.symbol() == "(":
                         self.tokenizer.advance()
                         nArgs = self.compileExpressionList()
                         self.tokenizer.advance()
-                        self.writer.writeCall(self.classSymbolTable.name + name,nArgs)
+                        self.writer.writeCall(self.classSymbolTable.name + "." + name,nArgs)
 
        
     def compileExpressionList(self):
