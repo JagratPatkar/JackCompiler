@@ -366,15 +366,17 @@ class CompilationEngine():
 
         while self.tokenizer.symbol() != ";" and self.tokenizer.symbol() != "]" and self.tokenizer.symbol() != ")" and self.tokenizer.symbol() != ",":
             self.compileTerm()
+            print("Here!")
             if self.tokenizer.symbol() != ";" and self.tokenizer.symbol() != "]" and self.tokenizer.symbol() != ")"  and self.tokenizer.symbol() != ",": self.tokenizer.advance()
 
 
     def compileTerm(self):
 
        
-        if self.tokenizer.symbol() == "(":  
+        if self.tokenizer.symbol() == "(":   #2
             self.tokenizer.advance()
             self.compileExpression()
+            print("Here3")
             self.tokenizer.advance()
         else:
             if self.tokenizer.symbol() == "-":
@@ -385,13 +387,16 @@ class CompilationEngine():
 
             while self.tokenizer.symbol() != ")" and self.tokenizer.symbol() != "]" and self.tokenizer.symbol() != ";"  and self.tokenizer.symbol() != ",":
                 
-                if self.tokenizer.symbol() in op:
+                if self.tokenizer.symbol() in op: #4
+                    print("Here")
                     sym = self.tokenizer.symbol()
                     self.tokenizer.advance()
                     self.compileTerm()
                     self.writer.writeArithmetic(sym)
-
-                elif self.tokenizer.tokenType() == "integerConstant":
+                    print("Here2")
+                    print(self.tokenizer.symbol())
+                elif self.tokenizer.tokenType() == "integerConstant": #5
+                    print("Here1")
                     self.writer.writePush("constant",self.tokenizer.intVal())
                     self.tokenizer.advance()
                 elif self.tokenizer.tokenType() == "stringConstant":
@@ -408,7 +413,7 @@ class CompilationEngine():
                 elif self.tokenizer.symbol() in unaryOp:
                      sym = self.tokenizer.symbol()
                      self.tokenizer.advance()
-                     self.compileTerm()
+                     self.compileTerm() #1
                      self.writer.writeArithmetic(sym)
                 elif self.tokenizer.symbol() == "(":
                     self.compileTerm()
@@ -421,7 +426,7 @@ class CompilationEngine():
                     if ko == None: flag = True
                     else:
                         if ko == "field": self.writer.writePush(keywordConstants[3],io)
-                        else:self.writer.writePush(ko,io)
+                        else:self.writer.writePush(ko,io) #3
                     self.tokenizer.advance()
                     if self.tokenizer.symbol() == "[": #TODO ----------------------------------
                         self.tokenizer.advance()

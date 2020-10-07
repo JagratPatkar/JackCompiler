@@ -54,6 +54,10 @@ class Tokenizer():
         line = line[0]
         line = line.split("/**")
         line = line[0]
+        line = line.split("*")
+        line = line[0]
+        line = line.split("*/")
+        line = line[0]
         for i in symbols:
             if i in line:line = line.replace(i," " + i + " ")
         
@@ -111,7 +115,7 @@ class Tokenizer():
         # elif self.tokens[self.currentToken] == '"': return "&quot"
         # else: return self.tokens[self.currentToken] 
         return self.tokens[self.currentToken] 
-        
+
     def identifier(self): return self.tokens[self.currentToken] 
 
     def intVal(self): return self.tokens[self.currentToken] 
