@@ -105,12 +105,13 @@ class Tokenizer():
     def keyWord(self): return self.tokens[self.currentToken]
 
     def symbol(self):
-        if self.tokens[self.currentToken] == "<": return "&lt;"
-        elif self.tokens[self.currentToken] == ">": return "&gt;"
-        elif self.tokens[self.currentToken] == "&": return "&amp;"
-        elif self.tokens[self.currentToken] == '"': return "&quot"
-        else: return self.tokens[self.currentToken] 
-
+        # if self.tokens[self.currentToken] == "<": return "&lt;"
+        # elif self.tokens[self.currentToken] == ">": return "&gt;"
+        # elif self.tokens[self.currentToken] == "&": return "&amp;"
+        # elif self.tokens[self.currentToken] == '"': return "&quot"
+        # else: return self.tokens[self.currentToken] 
+        return self.tokens[self.currentToken] 
+        
     def identifier(self): return self.tokens[self.currentToken] 
 
     def intVal(self): return self.tokens[self.currentToken] 
