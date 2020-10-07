@@ -59,17 +59,17 @@ class SymbolTable:
 
     def kindOf(self,name):
         for i in self.table:
-            if name in i.values():return i["kind"]
+            if name == i["name"]:return i["kind"]
         if self.parent != None : return self.parent.kindOf(name) 
 
     def typeOf(self,name):
         for i in self.table:
-            if name in i.values():return i["type"]
+            if name == i["name"]:return i["type"]
         if self.parent != None : return self.parent.typeOf(name) 
 
     def indexOf(self,name):
         for i in self.table: 
-            if name in i.values() : return str(i["#"])
+            if name == i["name"] : return str(i["#"])
         if self.parent != None : return self.parent.indexOf(name) 
 
     def initThis(self): self.addVar("this",self.parent.name,"argument")
@@ -136,6 +136,7 @@ class CompilationEngine():
         self.tokenizer.reset()
         self.currFuncType = None
         self.compileClass()
+        self.classSymbolTable.printTable()
 
     def compileClass(self):
 
@@ -195,6 +196,7 @@ class CompilationEngine():
         self.tokenizer.advance()
 
         self.compileSubroutineBody()
+        self.subroutineSymbolTable.printTable()
         self.subroutineSymbolTable.resetTable()
 
     def compileParameterList(self):
@@ -264,7 +266,6 @@ class CompilationEngine():
         kind = self.subroutineSymbolTable.kindOf(self.tokenizer.identifier())
         index = self.subroutineSymbolTable.indexOf(self.tokenizer.identifier())
         self.tokenizer.advance()
-
         if self.tokenizer.symbol() == "[":
             if kind == "field": self.writer.writePush("this",index)
             else : self.writer.writePush(kind,index)
@@ -282,7 +283,9 @@ class CompilationEngine():
             self.writer.writePop("that","0")
 
         else:
+           
             self.tokenizer.advance()
+           
             self.compileExpression()
             if kind == "field": self.writer.writePop("this",index)
             else: self.writer.writePop(kind,index)
@@ -443,7 +446,7 @@ class CompilationEngine():
                 name = self.tokenizer.identifier()
                 ko = self.subroutineSymbolTable.kindOf(self.tokenizer.identifier())
                 io = self.subroutineSymbolTable.indexOf(self.tokenizer.identifier())
-                if ko == None: flag = True
+                if ko == None:flag = True
                 else:
                     if ko == "field": self.writer.writePush(keywordConstants[3],io)
                     else: self.writer.writePush(ko,io) 

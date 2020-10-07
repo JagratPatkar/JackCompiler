@@ -33,15 +33,16 @@ class Tokenizer():
                 if l1[i] == "*":
                     i = i + 1
                     if l1[i] == "*": 
-                        while l1[i] != "/":
+                        while l1[i] != "*" or l1[i + 1] != "/":
                             i = i + 1
                         else: 
+                            i = i + 1
                             i = i + 1
 
                 elif l1[i] == "/":
                     while l1[i] != "\n":
                         i = i + 1
-
+                else: i = i - 1
             str = str + l1[i]
             i = i + 1
         
