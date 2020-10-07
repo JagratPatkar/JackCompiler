@@ -136,7 +136,6 @@ class CompilationEngine():
         self.tokenizer.reset()
         self.currFuncType = None
         self.compileClass()
-        self.classSymbolTable.printTable()
 
     def compileClass(self):
 
@@ -196,7 +195,6 @@ class CompilationEngine():
         self.tokenizer.advance()
 
         self.compileSubroutineBody()
-        self.subroutineSymbolTable.printTable()
         self.subroutineSymbolTable.resetTable()
 
     def compileParameterList(self):
@@ -416,7 +414,11 @@ class CompilationEngine():
                 self.writer.writePush("constant",self.tokenizer.intVal())
                 self.tokenizer.advance()
             elif self.tokenizer.tokenType() == "stringConstant":
-                #TODO ----------------------------------
+                self.writer.writePush("constant",str(len(self.tokenizer.stringVal())))
+                self.writer.writeCall("String.new","1")
+                for i in self.tokenizer.stringVal():
+                    self.writer.writePush("constant",str(ord(i)))
+                    self.writer.writeCall("String.appendChar","2")
                 self.tokenizer.advance()
             elif self.tokenizer.keyWord() in keywordConstants:
                 if self.tokenizer.keyWord() == keywordConstants[3]: self.writer.writePush("pointer","0")
