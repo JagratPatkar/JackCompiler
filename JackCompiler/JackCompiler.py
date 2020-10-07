@@ -46,6 +46,11 @@ class SymbolTable:
             self.incrementLocalCounter()
         self.table.append(temp)
 
+    def printTable(self):
+        print("---------------------------------------")
+        print("           ",self.name,"               ")
+        for i in self.table:
+            print(i)
 
     def resetTable(self):
         self.table = []
@@ -157,8 +162,8 @@ class CompilationEngine():
         while self.tokenizer.symbol() != ";":
             if counter == 1:
                 if self.tokenizer.tokenType() == "identifier" :  varType = self.tokenizer.identifier()
-                elif self.tokenizer.tokenType() == "keyword" : varType = self.tokenizer.keyWord()  
-            if self.tokenizer.symbol() != "," and counter != 1:
+                elif self.tokenizer.tokenType() == "keyword" : varType = self.tokenizer.keyWord() 
+            elif counter > 1 and self.tokenizer.symbol() != ",":
                 self.classSymbolTable.addVar(self.tokenizer.identifier(),varType,kind)
             self.tokenizer.advance()
             counter = counter + 1
@@ -184,7 +189,6 @@ class CompilationEngine():
         self.tokenizer.advance()
 
         self.compileSubroutineBody()
-
         self.subroutineSymbolTable.resetTable()
 
     def compileParameterList(self):
@@ -263,8 +267,8 @@ class CompilationEngine():
         else:
             self.tokenizer.advance()
             self.compileExpression()
-            self.writer.writePop(kind,index)
-
+            if kind == "field": self.writer.writePop("this",index)
+            else: self.writer.writePop(kind,index)
 
 
     def compileIf(self):
@@ -294,7 +298,7 @@ class CompilationEngine():
             self.tokenizer.advance()
             self.writer.writeLable(lable2)
         else:
-            self.writer.writeIf(lable1)
+            self.writer.writeLable(lable1)
 
     def compileWhile(self):
         for i in range(2):
