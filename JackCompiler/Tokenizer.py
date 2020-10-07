@@ -120,6 +120,20 @@ class Tokenizer():
     
     def reset(self): self.currentToken = -1
 
+
+    def getMethods(self):
+        l = []
+        self.advance()
+        while self.hasMoreTokens():
+            
+            if self.keyWord() == "method":
+                self.advance()
+                self.advance()
+                l.append(self.identifier())
+
+            self.advance()        
+        return l
+
     def tokenType(self):
         if self.tokens[self.currentToken] in keywords:return "keyword"
         elif self.tokens[self.currentToken] in symbols:return "symbol"
