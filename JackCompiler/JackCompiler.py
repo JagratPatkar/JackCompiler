@@ -98,6 +98,7 @@ class VMWriter():
     def writeArithmetic(self,command):
         if command == "+": self.output.write("add\n")
         elif command == "*": self.writeCall("Math.multiply","2")
+        elif command == "/": self.writeCall("Math.divide","2")
         elif command == "-": self.output.write("sub\n")
         elif command == "=": self.output.write("eq\n")
         elif command == ">": self.output.write("gt\n")
@@ -267,10 +268,21 @@ class CompilationEngine():
         self.tokenizer.advance()
 
         if self.tokenizer.symbol() == "[":
-            # self.tokenizer.advance()
-            # self.compileExpression()
-            # self.tokenizer.advance()
-            pass
+            if kind == "field": self.writer.writePush("this",index)
+            else : self.writer.writePush(kind,index)
+            self.tokenizer.advance()
+            self.compileExpression()
+            self.tokenizer.advance()
+            self.tokenizer.advance()
+            
+            self.writer.writeArithmetic("+")
+            self.compileExpression()
+
+            self.writer.writePop("temp","0")
+            self.writer.writePop("pointer","1")
+            self.writer.writePush("temp","0")
+            self.writer.writePop("that","0")
+
         else:
             self.tokenizer.advance()
             self.compileExpression()
@@ -398,7 +410,7 @@ class CompilationEngine():
             if self.tokenizer.symbol() in op: 
                 sym = self.tokenizer.symbol()                    
                 self.tokenizer.advance()
-                self.compileTerm() #4
+                self.compileTerm() 
                 self.writer.writeArithmetic(sym)
             elif self.tokenizer.tokenType() == "integerConstant": 
                 self.writer.writePush("constant",self.tokenizer.intVal())
@@ -434,10 +446,14 @@ class CompilationEngine():
                     if ko == "field": self.writer.writePush(keywordConstants[3],io)
                     else: self.writer.writePush(ko,io) 
                 self.tokenizer.advance()
-                if self.tokenizer.symbol() == "[": #TODO ----------------------------------
+                if self.tokenizer.symbol() == "[": 
                     self.tokenizer.advance()
                     self.compileExpression()
+                    self.writer.writeArithmetic("+")
+                    self.writer.writePop("pointer","1")
+                    self.writer.writePush("that","0")
                     self.tokenizer.advance()
+
                 elif self.tokenizer.symbol() == ".":
                     self.tokenizer.advance()
                     subName = self.tokenizer.identifier()

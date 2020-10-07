@@ -8,6 +8,7 @@ op = ["+","-","*","/","&","|","<",">","="]
 unaryOp = ["~","-"]
 
 
+
 class Tokenizer():
 
     def __init__(self,file):
