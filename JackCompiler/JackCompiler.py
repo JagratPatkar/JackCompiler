@@ -136,7 +136,6 @@ class CompilationEngine():
         self.tokenizer.reset()
         self.currFuncType = None
         self.compileClass()
-        self.classSymbolTable.printTable()
 
     def compileClass(self):
 
@@ -196,7 +195,6 @@ class CompilationEngine():
         self.tokenizer.advance()
 
         self.compileSubroutineBody()
-        self.subroutineSymbolTable.printTable()
         self.subroutineSymbolTable.resetTable()
 
     def compileParameterList(self):
