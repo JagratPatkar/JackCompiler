@@ -11,6 +11,7 @@ class SymbolTable:
         self.staticCounter = 0
         self.argumentCounter = 0
         self.localCounter = 0
+        self.parent = None
     
     def addVar(self,name,varType,kind):
         temp = {
@@ -50,8 +51,8 @@ class SymbolTable:
 
     def indexOf(self,name):
         for i in self.table: 
-            if name in i.values():return str(i["#"])
-        if self.parent != None : return self.parent.typeOf(name) 
+            if name in i.values() : return str(i["#"])
+        if self.parent != None : return self.parent.indexOf(name) 
 
     def initThis(self): self.addVar("this",self.parent.name,"argument")
     def setParent(self,parent): self.parent = parent
@@ -62,88 +63,59 @@ class SymbolTable:
     def incrementLocalCounter(self): self.localCounter = self.localCounter + 1
 
 
-class CompilationEngine():
 
-    def __init__(self,file,tokenizer):
+class VMWriter():
+    
+    def __init__(self,file):
         newFileName = file.split("/").pop().split(".")[0] + ".xml"
         outputFilePath = file.replace(file.split("/").pop(),newFileName)
         self.output = open(outputFilePath,"w")
+
+    def writePush(self,segment,index):
+        pass
+
+    def writePop(self,segment,index):
+        pass
+
+    def writeArithmetic(self,command):
+        pass
+
+    def writeLable(self,lable):
+        pass
+
+    def writeGoto(self,lable):
+        pass
+
+    def writeIf(self,lable):
+        pass
+
+    def writeCall(self,name,nArgs):
+        pass
+
+    def writeFunction(self,name,nArgs):
+        pass
+
+    def writeReturn(self):
+        pass
+
+    def close(self):
+        pass
+
+
+class CompilationEngine():
+
+    def __init__(self,file,tokenizer,writer):
         self.tokenizer = tokenizer
+        self.writer = writer
         self.classSymbolTable = SymbolTable()
         self.subroutineSymbolTable = SymbolTable()
         self.subroutineSymbolTable.setParent(self.classSymbolTable)
         self.compileClass()
 
-    def printStrartTag(self,str):
-        self.output.write("<")
-        self.output.write(str)
-        self.output.write("> ")
-
-    def printEndTag(self,str):
-        self.output.write(" </")
-        self.output.write(str)
-        self.output.write(">")
-
-
-    def isClass(self):
-        self.output.write("<")
-        self.output.write("category")
-        self.output.write("> ")
-        self.output.write("class")
-        self.output.write(" </")
-        self.output.write("category")
-        self.output.write("> ")
-        self.output.write("\n")
-
-    def isSub(self):
-        self.output.write("<")
-        self.output.write("category")
-        self.output.write("> ")
-        self.output.write("subroutine")
-        self.output.write(" </")
-        self.output.write("category")
-        self.output.write("> ")
-        self.output.write("\n")
-
-    def isVar(self,kind,index):
-        self.output.write("<")
-        self.output.write("category")
-        self.output.write("> ")
-        self.output.write(kind)
-        self.output.write(" </")
-        self.output.write("category")
-        self.output.write("> ")
-        self.output.write("\n")
-        self.output.write("<")
-        self.output.write("index")
-        self.output.write("> ")
-        self.output.write(index)
-        self.output.write(" </")
-        self.output.write("index")
-        self.output.write("> ")
-        self.output.write("\n")
-
-    
-
-    def printCurrentToken(self):
-
-        self.printStrartTag(self.tokenizer.tokenType())
-        if self.tokenizer.tokenType() == "keyword": self.output.write(self.tokenizer.keyWord())
-        elif self.tokenizer.tokenType() == "symbol": self.output.write(self.tokenizer.symbol())
-        elif self.tokenizer.tokenType() == "identifier": self.output.write(self.tokenizer.identifier())
-        elif self.tokenizer.tokenType() == "stringConstant": self.output.write(self.tokenizer.stringVal())
-        elif self.tokenizer.tokenType() == "integerConstant": self.output.write(self.tokenizer.intVal())
-        self.printEndTag(self.tokenizer.tokenType())
-        self.output.write("\n")
-
     def compileClass(self):
-
-        self.printStrartTag("class")
-        self.output.write("\n")
 
         for i in range(3):
             self.tokenizer.advance()
-            self.printCurrentToken()
             if i == 1: 
                 self.classSymbolTable.setName(self.tokenizer.identifier())
 
@@ -156,15 +128,11 @@ class CompilationEngine():
             self.compileClassSubroutineDec()
             self.tokenizer.advance()
 
-        self.printCurrentToken()
-        self.printEndTag("class")
-
-
+    def isVar(self,kind,index):
+        pass
 
     def compileClassVarDec(self):
 
-        self.printStrartTag("classVarDec")
-        self.output.write("\n")
         counter = 0
 
         if self.tokenizer.keyWord() == "static": 
@@ -173,7 +141,6 @@ class CompilationEngine():
             kind = "field"
 
         while self.tokenizer.symbol() != ";":
-            self.printCurrentToken()
             if counter == 1:
                 if self.tokenizer.tokenType() == "identifier" :  varType = self.tokenizer.identifier()
                 elif self.tokenizer.tokenType() == "keyword" : varType = self.tokenizer.keyWord()  
@@ -183,93 +150,60 @@ class CompilationEngine():
             self.tokenizer.advance()
             counter = counter + 1
 
-        self.printCurrentToken()
-        self.printEndTag("classVarDec")
-        self.output.write("\n")
 
     
     def compileClassSubroutineDec(self):
-        self.printStrartTag("subroutineDec")
-        self.output.write("\n")
 
         if self.tokenizer.keyWord() == "method":
             self.subroutineSymbolTable.initThis()
 
         for i in range(4):
-            self.printCurrentToken()
             self.tokenizer.advance()
         
         self.compileParameterList()
-        self.printCurrentToken()
         self.tokenizer.advance()
         self.compileSubroutineBody()
-        self.printEndTag("subroutineDec")
-        self.output.write("\n")
         self.subroutineSymbolTable.resetTable()
 
     def compileParameterList(self):
-        self.printStrartTag("parameterList")
-        self.output.write("\n")
         
         counter = 1
-
         while self.tokenizer.symbol() != ")":
-            self.printCurrentToken()
             if counter%2 == 1 and self.tokenizer.symbol() != ",":
                 if self.tokenizer.tokenType() == "identifier" :  varType = self.tokenizer.identifier()
                 elif self.tokenizer.tokenType() == "keyword" : varType = self.tokenizer.keyWord() 
             elif counter%2 == 0 :
-                self.classSymbolTable.addVar(self.tokenizer.identifier(),varType,"argument")
-                self.isVar(self.classSymbolTable.kindOf(self.tokenizer.identifier()),self.classSymbolTable.indexOf(self.tokenizer.identifier()))
+                self.subroutineSymbolTable.addVar(self.tokenizer.identifier(),varType,"argument")
+                self.isVar(self.subroutineSymbolTable.kindOf(self.tokenizer.identifier()),self.subroutineSymbolTable.indexOf(self.tokenizer.identifier()))
             self.tokenizer.advance()
             counter = counter + 1
 
-        self.printEndTag("parameterList")
-        self.output.write("\n")
-
 
     def compileSubroutineBody(self):
-        self.printStrartTag("subroutineBody")
-        self.output.write("\n")
         
-        self.printCurrentToken()
-
         self.tokenizer.advance()
     
         while self.tokenizer.keyWord() == "var":
             self.compileVarDec()
             self.tokenizer.advance()
-
         self.compileStatements()
-        self.printCurrentToken()
-        self.printEndTag("subroutineBody")
-        self.output.write("\n")
-
+    
     def compileVarDec(self):
-        self.printStrartTag("varDec")
-        self.output.write("\n")
-
         counter = 0
         varType = None
 
         while self.tokenizer.symbol() != ";":
-            self.printCurrentToken()
             if counter == 1:
                 if self.tokenizer.tokenType() == "identifier" :  varType = self.tokenizer.identifier()
                 elif self.tokenizer.tokenType() == "keyword" : varType = self.tokenizer.keyWord() 
             elif counter > 1 and self.tokenizer.symbol() != ",":
-                self.classSymbolTable.addVar(self.tokenizer.identifier(),varType,"local")
-                self.isVar(self.classSymbolTable.kindOf(self.tokenizer.identifier()),self.classSymbolTable.indexOf(self.tokenizer.identifier()))
+                self.subroutineSymbolTable.addVar(self.tokenizer.identifier(),varType,"local")
+                self.isVar(self.subroutineSymbolTable.kindOf(self.tokenizer.identifier()),self.subroutineSymbolTable.indexOf(self.tokenizer.identifier()))
             self.tokenizer.advance()
             counter = counter + 1
         
-        self.printCurrentToken()
-        self.printEndTag("varDec")
-        self.output.write("\n")
 
     def compileStatements(self):
-        self.printStrartTag("statements")
-        self.output.write("\n")
        
         while self.tokenizer.tokenType() != "symbol":
             toEx = True
@@ -281,169 +215,110 @@ class CompilationEngine():
             elif self.tokenizer.keyWord() == "do": self.compileDo()
             elif self.tokenizer.keyWord() == "return": self.compileReturn()
             if toEx : self.tokenizer.advance()
-        self.printEndTag("statements")
-        self.output.write("\n")
 
     def compileLet(self):
-        self.printStrartTag("letStatement")
-        self.output.write("\n")
-
+        
         for i in range(3):
-            self.printCurrentToken()
             if i == 1: self.isVar(self.subroutineSymbolTable.kindOf(self.tokenizer.identifier()),self.subroutineSymbolTable.indexOf(self.tokenizer.identifier()))
             self.tokenizer.advance()
             if self.tokenizer.symbol() == "[":
-                self.printCurrentToken()
                 self.tokenizer.advance()
                 self.compileExpression()
-                self.printCurrentToken()
                 self.tokenizer.advance()
 
         self.compileExpression()
-        self.printCurrentToken()#Printing ;
-        self.printEndTag("letStatement")
-        self.output.write("\n")
 
     def compileIf(self):
-        self.printStrartTag("ifStatement")
-        self.output.write("\n")
-
         for i in range(2):
-            self.printCurrentToken()
             self.tokenizer.advance()
 
         self.compileExpression()
 
         for i in range(2):
-            self.printCurrentToken()
             self.tokenizer.advance()
 
         self.compileStatements()
 
-        self.printCurrentToken()
         self.tokenizer.advance()
 
         if self.tokenizer.keyWord() == "else":
             for i in range(2):
-                self.printCurrentToken()
                 self.tokenizer.advance()
             self.compileStatements()
-            self.printCurrentToken()
             self.tokenizer.advance()
 
-        self.printEndTag("ifStatement")
-        self.output.write("\n")
 
     def compileWhile(self):
-        self.printStrartTag("whileStatement")
-        self.output.write("\n")
-
         for i in range(2):
-            self.printCurrentToken()
             self.tokenizer.advance()
 
         self.compileExpression()
 
         for i in range(2):
-            self.printCurrentToken()
             self.tokenizer.advance()
 
         self.compileStatements()
 
-        self.printCurrentToken()
-
-        self.printEndTag("whileStatement")
-        self.output.write("\n")
 
     def compileDo(self):
-        self.printStrartTag("doStatement")
-        self.output.write("\n")
-
         for i in range(2):
-            self.printCurrentToken()
             self.tokenizer.advance()
 
         if self.tokenizer.symbol() == ".":
             for i in range(2):
-                self.printCurrentToken()
                 self.tokenizer.advance()
 
-        self.printCurrentToken()
         self.tokenizer.advance()
 
         self.compileExpressionList()
-
-        
-        self.printCurrentToken()
+       
         self.tokenizer.advance()
-        self.printCurrentToken()
 
-        self.printEndTag("doStatement")
-        self.output.write("\n")
 
     def compileReturn(self):
-        self.printStrartTag("returnStatement")
-        self.output.write("\n")
 
-        self.printCurrentToken()
         self.tokenizer.advance()
-
         if self.tokenizer.symbol() != ";":
             self.compileExpression()
 
-        
-        self.printCurrentToken()
-
-        self.printEndTag("returnStatement")
-        self.output.write("\n")
 
     def compileExpression(self):
-        self.printStrartTag("expression")
-        self.output.write("\n")
-
         counter = 0 
 
         while self.tokenizer.symbol() != ";" and self.tokenizer.symbol() != "]" and self.tokenizer.symbol() != ")" and self.tokenizer.symbol() != ",":
             if self.tokenizer.symbol() in op and not (self.tokenizer.symbol() == "-" and counter == 0):
-                self.printCurrentToken()
+                
                 self.tokenizer.advance()
             else:
                 self.compileTerm()
                 if self.tokenizer.symbol() != ";" and self.tokenizer.symbol() != "]" and self.tokenizer.symbol() != ")" and self.tokenizer.symbol() not in op  and self.tokenizer.symbol() != ",": self.tokenizer.advance()
             counter = counter + 1
 
-        self.printEndTag("expression")
-        self.output.write("\n")
 
     def compileTerm(self):
 
-        self.printStrartTag("term")
-        self.output.write("\n")
-
        
         if self.tokenizer.symbol() == "(":  
-            self.printCurrentToken()
             self.tokenizer.advance()
             self.compileExpression()
-            self.printCurrentToken()
             self.tokenizer.advance()
         else:
             if self.tokenizer.symbol() == "-":
-                self.printCurrentToken()
+
                 self.tokenizer.advance()
                 self.compileTerm()
+
             while self.tokenizer.symbol() != ")" and self.tokenizer.symbol() != "]" and self.tokenizer.symbol() != ";" and self.tokenizer.symbol() not in op and self.tokenizer.symbol() != ",":
                 if self.tokenizer.tokenType() == "integerConstant" or self.tokenizer.tokenType() == "stringConstant" or self.tokenizer.keyWord() in keywordConstants :
-                    self.printCurrentToken()
+                    
                     self.tokenizer.advance()
                 elif self.tokenizer.symbol() in unaryOp:
-                     self.printCurrentToken()
+                    
                      self.tokenizer.advance()
                      self.compileTerm()
                 elif self.tokenizer.symbol() == "(":
                     self.compileTerm()
                 elif self.tokenizer.tokenType() == "identifier":
-                    self.printCurrentToken()
                     flag = False
                     ko = self.subroutineSymbolTable.kindOf(self.tokenizer.identifier())
                     io = self.subroutineSymbolTable.indexOf(self.tokenizer.identifier())
@@ -451,41 +326,27 @@ class CompilationEngine():
                     else: self.isVar(ko,io)
                     self.tokenizer.advance()
                     if self.tokenizer.symbol() == "[":
-                        self.printCurrentToken()
                         self.tokenizer.advance()
                         self.compileExpression()
-                        self.printCurrentToken()
                         self.tokenizer.advance()
                     elif self.tokenizer.symbol() == ".":
-                        if flag: self.isClass()
-                        self.printCurrentToken()
+                        if flag: pass
                         self.tokenizer.advance()
                     if self.tokenizer.symbol() == "(":
-                        if flag: self.isClass()
-                        self.printCurrentToken()
+                        if flag: pass
                         self.tokenizer.advance()
                         self.compileExpressionList()
-                        self.printCurrentToken()
                         self.tokenizer.advance()
 
        
-        self.printEndTag("term")
-        self.output.write("\n")
-
     def compileExpressionList(self):
-        self.printStrartTag("expressionList")
-        self.output.write("\n")
 
         while self.tokenizer.symbol() != ")":
             if self.tokenizer.symbol() == "," : 
-                self.printCurrentToken()
                 self.tokenizer.advance()
             else:
                 self.compileExpression()
                 if self.tokenizer.symbol() != ")" and self.tokenizer.symbol() != ",": self.tokenizer.advance()
-
-        self.printEndTag("expressionList")
-        self.output.write("\n")
 
 
 class Analyzer():
@@ -504,7 +365,8 @@ class Analyzer():
         for fp in self.files:
             tokenizer = Tokenizer(fp)
             tokenizer.tokenize()
-            CompilationEngine(fp,tokenizer)
+            vmWrite = VMWriter(fp)
+            CompilationEngine(fp,tokenizer,vmWrite)
 
     
 
