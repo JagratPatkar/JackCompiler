@@ -322,7 +322,7 @@ class CompilationEngine():
         self.writer.writeLable(lable2)
 
     def compileDo(self):
-        
+        flag = False
         self.tokenizer.advance()
         name = self.tokenizer.identifier()
         ko = self.subroutineSymbolTable.kindOf(self.tokenizer.identifier())
