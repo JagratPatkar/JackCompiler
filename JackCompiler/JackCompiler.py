@@ -2,7 +2,7 @@ import glob
 import sys
 from Tokenizer import *
 
-class Lable():
+class Label():
 
     def __init__(self):
         self.lableCounter = 0
@@ -49,7 +49,7 @@ class SymbolTable:
 
     def resetTable(self):
         self.table = []
-        self.staticCounter = 0
+        self.localCounter = 0
         self.argumentCounter = 0
 
     def kindOf(self,name):
@@ -102,7 +102,7 @@ class VMWriter():
         elif command == "~": self.output.write("not\n")
         elif command == "neg": self.output.write("neg\n")
 
-    def writeLable(self,lable): self.output.write("lable "+lable+"\n")
+    def writeLable(self,lable): self.output.write("label "+lable+"\n")
 
     def writeGoto(self,lable): self.output.write("goto "+lable+"\n")
 
@@ -270,10 +270,9 @@ class CompilationEngine():
     def compileIf(self):
         for i in range(2):
             self.tokenizer.advance()
-
         self.compileExpression()
         self.writer.writeArithmetic("~")
-        lable1 = self.lable.getLable()
+        lable1 = "LABEL" + self.lable.getLable()
         self.lable.updateLable() 
         self.writer.writeIf(lable1)
         
@@ -285,7 +284,7 @@ class CompilationEngine():
         self.tokenizer.advance()
 
         if self.tokenizer.keyWord() == "else":
-            lable2 = self.lable.getLable()
+            lable2 = "LABEL"+self.lable.getLable()
             self.lable.updateLable() 
             self.writer.writeGoto(lable2)
             self.writer.writeLable(lable1)
@@ -301,7 +300,7 @@ class CompilationEngine():
         for i in range(2):
             self.tokenizer.advance()
 
-        lable1 = self.lable.getLable()
+        lable1 = "LABEL" + self.lable.getLable()
         self.lable.updateLable()
 
         self.writer.writeLable(lable1)
@@ -309,7 +308,7 @@ class CompilationEngine():
         self.compileExpression()
 
         self.writer.writeArithmetic("~")
-        lable2 = self.lable.getLable()
+        lable2 = "LABEL" + self.lable.getLable()
         self.lable.updateLable()
 
         self.writer.writeIf(lable2)
@@ -337,7 +336,6 @@ class CompilationEngine():
             self.tokenizer.advance()
             self.writer.writeCall(self.classSymbolTable.name + "." + name,nArgs)
         elif self.tokenizer.symbol() == ".":
-            
             self.tokenizer.advance()
             subName = self.tokenizer.identifier()
             self.tokenizer.advance()
@@ -350,7 +348,6 @@ class CompilationEngine():
                 self.writer.writeCall(clsName + "." + subName,nArgs)
 
         self.writer.writePop("temp","0")
-        
 
     def compileReturn(self):
 
@@ -363,40 +360,32 @@ class CompilationEngine():
         self.writer.writeReturn()
 
     def compileExpression(self):
-
         while self.tokenizer.symbol() != ";" and self.tokenizer.symbol() != "]" and self.tokenizer.symbol() != ")" and self.tokenizer.symbol() != ",":
             self.compileTerm()
-            print("Here!")
-            if self.tokenizer.symbol() != ";" and self.tokenizer.symbol() != "]" and self.tokenizer.symbol() != ")"  and self.tokenizer.symbol() != ",": self.tokenizer.advance()
+            if self.tokenizer.symbol() != ";" and self.tokenizer.symbol() != "]" and self.tokenizer.symbol() != ")"  and self.tokenizer.symbol() != "," and self.tokenizer.symbol() not in op: self.tokenizer.advance()
 
 
     def compileTerm(self):
 
        
-        if self.tokenizer.symbol() == "(":   #2
+        if self.tokenizer.symbol() == "(":   
             self.tokenizer.advance()
             self.compileExpression()
-            print("Here3")
             self.tokenizer.advance()
         else:
             if self.tokenizer.symbol() == "-":
 
                 self.tokenizer.advance()
-                self.compileTerm()
+                self.compileExpression() 
                 self.writer.writeArithmetic("neg")
-
+            
             while self.tokenizer.symbol() != ")" and self.tokenizer.symbol() != "]" and self.tokenizer.symbol() != ";"  and self.tokenizer.symbol() != ",":
-                
-                if self.tokenizer.symbol() in op: #4
-                    print("Here")
-                    sym = self.tokenizer.symbol()
+                if self.tokenizer.symbol() in op: 
+                    sym = self.tokenizer.symbol()                    
                     self.tokenizer.advance()
                     self.compileTerm()
                     self.writer.writeArithmetic(sym)
-                    print("Here2")
-                    print(self.tokenizer.symbol())
-                elif self.tokenizer.tokenType() == "integerConstant": #5
-                    print("Here1")
+                elif self.tokenizer.tokenType() == "integerConstant": 
                     self.writer.writePush("constant",self.tokenizer.intVal())
                     self.tokenizer.advance()
                 elif self.tokenizer.tokenType() == "stringConstant":
@@ -406,17 +395,19 @@ class CompilationEngine():
                     if self.tokenizer.keyWord() == keywordConstants[3]: self.writer.writePush("pointer","0")
                     elif self.tokenizer.keyWord() == keywordConstants[2]: self.writer.writePush("constant","0")
                     elif self.tokenizer.keyWord() == keywordConstants[1]: self.writer.writePush("constant","0")
-                    elif self.tokenizer.keyWord() == keywordConstants[1]: 
+                    elif self.tokenizer.keyWord() == keywordConstants[0]: 
                         self.writer.writePush("constant","1")
                         self.writer.writeArithmetic("neg")
                     self.tokenizer.advance()
                 elif self.tokenizer.symbol() in unaryOp:
                      sym = self.tokenizer.symbol()
                      self.tokenizer.advance()
-                     self.compileTerm() #1
+                     self.compileExpression() #1
                      self.writer.writeArithmetic(sym)
                 elif self.tokenizer.symbol() == "(":
-                    self.compileTerm()
+                       self.tokenizer.advance()
+                       self.compileExpression()
+                       self.tokenizer.advance()
                 elif self.tokenizer.tokenType() == "identifier":
                     nArgs = "0"
                     flag = False
@@ -426,13 +417,12 @@ class CompilationEngine():
                     if ko == None: flag = True
                     else:
                         if ko == "field": self.writer.writePush(keywordConstants[3],io)
-                        else:self.writer.writePush(ko,io) #3
+                        else: self.writer.writePush(ko,io) 
                     self.tokenizer.advance()
                     if self.tokenizer.symbol() == "[": #TODO ----------------------------------
                         self.tokenizer.advance()
                         self.compileExpression()
                         self.tokenizer.advance()
-
                     elif self.tokenizer.symbol() == ".":
                         self.tokenizer.advance()
                         subName = self.tokenizer.identifier()
@@ -474,15 +464,14 @@ class Analyzer():
         else: [self.files.append(fn) for fn in glob.iglob(self.path+"/*.jack")]
         
     def analyze(self):
-        labler = Lable()
+        labler = Label()
         for fp in self.files:
             tokenizer = Tokenizer(fp)
             tokenizer.tokenize()
-            print(tokenizer.tokens)
             vmWrite = VMWriter(fp)
             CompilationEngine(fp,tokenizer,vmWrite,labler)
 
-    
+
 
 def main():
     path = sys.argv[1]

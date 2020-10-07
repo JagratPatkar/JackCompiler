@@ -4,21 +4,50 @@ keywords = ["class","constructor","function","method","field","static",
 symbols = ["{","}","(",")","[","]",".",",",";","+","-","*","/","&","|","<",">","=","~"]
 alphabets = ["a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z","A","B","C","D","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"]
 keywordConstants = ["true","false","null","this"]
-op = ["+","-","*","/","&amp;","|","&lt;","&gt;","="]
+op = ["+","-","*","/","&","|","<",">","="]
 unaryOp = ["~","-"]
 
 
 class Tokenizer():
 
     def __init__(self,file):
-        newFileName = file.split("/").pop().split(".")[0] + "T.xml"
-        outputFilePath = file.replace(file.split("/").pop(),newFileName)
+        # newFileName = file.split("/").pop().split(".")[0] + "T.xml"
+        # outputFilePath = file.replace(file.split("/").pop(),newFileName)
         self.input = open(file,"r")
+        self.filter(file)
         self.output = None
         # self.output = open(outputFilePath,"w")
         self.tokens = []
         self.currentToken = -1
         
+
+
+    def filter(self,file):
+        l1 = self.input.read()
+        i = 0
+        str = ""
+        while(i < len(l1)):
+            if l1[i] == "/":
+                i = i + 1
+                if l1[i] == "*":
+                    i = i + 1
+                    if l1[i] == "*": 
+                        while l1[i] != "/":
+                            i = i + 1
+                        else: 
+                            i = i + 1
+
+                elif l1[i] == "/":
+                    while l1[i] != "\n":
+                        i = i + 1
+
+            str = str + l1[i]
+            i = i + 1
+        
+        write = open(file,"w")
+        write.write(str)
+        write.close()
+        self.input = open(file,"r")
         
     def tokenize(self):
         el = self.input.readline()
@@ -49,18 +78,10 @@ class Tokenizer():
                     if i < len(el): i = i + 1
             el = self.input.readline()
 
+
     def serialize(self,line):
-        line = line.split("//")
-        line = line[0]
-        line = line.split("/**")
-        line = line[0]
-        line = line.split("*")
-        line = line[0]
-        line = line.split("*/")
-        line = line[0]
         for i in symbols:
             if i in line:line = line.replace(i," " + i + " ")
-        
         return line
 
     def printTokens(self):
