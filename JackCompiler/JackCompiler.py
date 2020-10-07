@@ -131,8 +131,11 @@ class CompilationEngine():
         self.subroutineSymbolTable = SymbolTable()
         self.subroutineSymbolTable.setParent(self.classSymbolTable)
         self.lable = labler
+        self.methodList = self.tokenizer.getMethods()
+        self.tokenizer.reset()
         self.currFuncType = None
         self.compileClass()
+        self.classSymbolTable.printTable()
 
     def compileClass(self):
 
@@ -180,7 +183,10 @@ class CompilationEngine():
 
             
         for i in range(3):
-            if i == 2: self.subroutineSymbolTable.setName(self.classSymbolTable.name + "." + self.tokenizer.identifier())
+            if i == 2: 
+                self.subroutineSymbolTable.setName(self.classSymbolTable.name + "." + self.tokenizer.identifier())
+                if self.currFuncType  == "method":
+                    self.methodList.append(self.classSymbolTable.name + "." + self.tokenizer.identifier())
             self.tokenizer.advance()
 
         
@@ -189,6 +195,7 @@ class CompilationEngine():
         self.tokenizer.advance()
 
         self.compileSubroutineBody()
+        self.subroutineSymbolTable.printTable()
         self.subroutineSymbolTable.resetTable()
 
     def compileParameterList(self):
@@ -334,17 +341,24 @@ class CompilationEngine():
         self.tokenizer.advance()
 
         if self.tokenizer.symbol() == "(":
-            
+
+            funcName = self.classSymbolTable.name + "." + name
             self.tokenizer.advance()
+            if name in self.methodList: 
+                self.writer.writePush("pointer","0")
             nArgs = self.compileExpressionList()
             self.tokenizer.advance()
-            self.writer.writeCall(self.classSymbolTable.name + "." + name,nArgs)
+            if name in self.methodList:  nArgs = str(int(nArgs)+1)
+            self.writer.writeCall(funcName,nArgs)
+
         elif self.tokenizer.symbol() == ".":
             self.tokenizer.advance()
             subName = self.tokenizer.identifier()
             self.tokenizer.advance()
             self.tokenizer.advance()
+            if not flag : self.writer.writePush("this",self.subroutineSymbolTable.indexOf(name))
             nArgs = self.compileExpressionList()
+            if not flag : nArgs = str(int(nArgs)+1)
             self.tokenizer.advance()
             if flag: self.writer.writeCall(name + "." + subName,nArgs)
             else:
@@ -441,10 +455,15 @@ class CompilationEngine():
                             self.writer.writeCall(clsName + "." + subName,nArgs)
 
                     elif self.tokenizer.symbol() == "(":
+
+                        funcName = self.classSymbolTable.name + "." + name
                         self.tokenizer.advance()
+                        if name in self.methodList: self.writer.writePush("pointer","0")
                         nArgs = self.compileExpressionList()
                         self.tokenizer.advance()
-                        self.writer.writeCall(self.classSymbolTable.name + "." + name,nArgs)
+                        if name in self.methodList:  nArgs = str(int(nArgs)+1)
+                        self.writer.writeCall(funcName,nArgs)
+
 
        
     def compileExpressionList(self):
