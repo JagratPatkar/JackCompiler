@@ -356,7 +356,9 @@ class CompilationEngine():
             subName = self.tokenizer.identifier()
             self.tokenizer.advance()
             self.tokenizer.advance()
-            if not flag : self.writer.writePush("this",self.subroutineSymbolTable.indexOf(name))
+            if not flag : 
+                if ko == "field": self.writer.writePush("this",self.subroutineSymbolTable.indexOf(name))
+                else:self.writer.writePush(ko,self.subroutineSymbolTable.indexOf(name))
             nArgs = self.compileExpressionList()
             if not flag : nArgs = str(int(nArgs)+1)
             self.tokenizer.advance()
@@ -386,83 +388,78 @@ class CompilationEngine():
     def compileTerm(self):
 
        
-        if self.tokenizer.symbol() == "(":   
-            self.tokenizer.advance()
-            self.compileExpression()
-            self.tokenizer.advance()
-        else:
-            if self.tokenizer.symbol() == "-":
+        if self.tokenizer.symbol() == "-":
 
+            self.tokenizer.advance()
+            self.compileExpression() 
+            self.writer.writeArithmetic("neg")
+            
+        while self.tokenizer.symbol() != ")" and self.tokenizer.symbol() != "]" and self.tokenizer.symbol() != ";"  and self.tokenizer.symbol() != ",":
+            if self.tokenizer.symbol() in op: 
+                sym = self.tokenizer.symbol()                    
+                self.tokenizer.advance()
+                self.compileTerm() #4
+                self.writer.writeArithmetic(sym)
+            elif self.tokenizer.tokenType() == "integerConstant": 
+                self.writer.writePush("constant",self.tokenizer.intVal())
+                self.tokenizer.advance()
+            elif self.tokenizer.tokenType() == "stringConstant":
+                #TODO ----------------------------------
+                self.tokenizer.advance()
+            elif self.tokenizer.keyWord() in keywordConstants:
+                if self.tokenizer.keyWord() == keywordConstants[3]: self.writer.writePush("pointer","0")
+                elif self.tokenizer.keyWord() == keywordConstants[2]: self.writer.writePush("constant","0")
+                elif self.tokenizer.keyWord() == keywordConstants[1]: self.writer.writePush("constant","0")
+                elif self.tokenizer.keyWord() == keywordConstants[0]: 
+                    self.writer.writePush("constant","1")
+                    self.writer.writeArithmetic("neg")
+                self.tokenizer.advance()
+            elif self.tokenizer.symbol() in unaryOp:
+                sym = self.tokenizer.symbol()
                 self.tokenizer.advance()
                 self.compileExpression() 
-                self.writer.writeArithmetic("neg")
-            
-            while self.tokenizer.symbol() != ")" and self.tokenizer.symbol() != "]" and self.tokenizer.symbol() != ";"  and self.tokenizer.symbol() != ",":
-                if self.tokenizer.symbol() in op: 
-                    sym = self.tokenizer.symbol()                    
+                self.writer.writeArithmetic(sym)
+            elif self.tokenizer.symbol() == "(":
+                self.tokenizer.advance()
+                self.compileExpression()
+                self.tokenizer.advance()
+            elif self.tokenizer.tokenType() == "identifier":
+                nArgs = "0"
+                flag = False
+                name = self.tokenizer.identifier()
+                ko = self.subroutineSymbolTable.kindOf(self.tokenizer.identifier())
+                io = self.subroutineSymbolTable.indexOf(self.tokenizer.identifier())
+                if ko == None: flag = True
+                else:
+                    if ko == "field": self.writer.writePush(keywordConstants[3],io)
+                    else: self.writer.writePush(ko,io) 
+                self.tokenizer.advance()
+                if self.tokenizer.symbol() == "[": #TODO ----------------------------------
                     self.tokenizer.advance()
-                    self.compileTerm()
-                    self.writer.writeArithmetic(sym)
-                elif self.tokenizer.tokenType() == "integerConstant": 
-                    self.writer.writePush("constant",self.tokenizer.intVal())
+                    self.compileExpression()
                     self.tokenizer.advance()
-                elif self.tokenizer.tokenType() == "stringConstant":
-                    #TODO ----------------------------------
+                elif self.tokenizer.symbol() == ".":
                     self.tokenizer.advance()
-                elif self.tokenizer.keyWord() in keywordConstants:
-                    if self.tokenizer.keyWord() == keywordConstants[3]: self.writer.writePush("pointer","0")
-                    elif self.tokenizer.keyWord() == keywordConstants[2]: self.writer.writePush("constant","0")
-                    elif self.tokenizer.keyWord() == keywordConstants[1]: self.writer.writePush("constant","0")
-                    elif self.tokenizer.keyWord() == keywordConstants[0]: 
-                        self.writer.writePush("constant","1")
-                        self.writer.writeArithmetic("neg")
+                    subName = self.tokenizer.identifier()
                     self.tokenizer.advance()
-                elif self.tokenizer.symbol() in unaryOp:
-                     sym = self.tokenizer.symbol()
-                     self.tokenizer.advance()
-                     self.compileExpression() #1
-                     self.writer.writeArithmetic(sym)
-                elif self.tokenizer.symbol() == "(":
-                       self.tokenizer.advance()
-                       self.compileExpression()
-                       self.tokenizer.advance()
-                elif self.tokenizer.tokenType() == "identifier":
-                    nArgs = "0"
-                    flag = False
-                    name = self.tokenizer.identifier()
-                    ko = self.subroutineSymbolTable.kindOf(self.tokenizer.identifier())
-                    io = self.subroutineSymbolTable.indexOf(self.tokenizer.identifier())
-                    if ko == None: flag = True
+                    self.tokenizer.advance()
+                    nArgs = self.compileExpressionList()
+                    self.tokenizer.advance()
+                    if flag: self.writer.writeCall(name + "." + subName,nArgs)
                     else:
-                        if ko == "field": self.writer.writePush(keywordConstants[3],io)
-                        else: self.writer.writePush(ko,io) 
+                        clsName = self.subroutineSymbolTable.typeOf(name)
+                        nArgs = str(int(nArgs) + 1)
+                        self.writer.writeCall(clsName + "." + subName,nArgs)
+
+                elif self.tokenizer.symbol() == "(":
+
+                    funcName = self.classSymbolTable.name + "." + name
                     self.tokenizer.advance()
-                    if self.tokenizer.symbol() == "[": #TODO ----------------------------------
-                        self.tokenizer.advance()
-                        self.compileExpression()
-                        self.tokenizer.advance()
-                    elif self.tokenizer.symbol() == ".":
-                        self.tokenizer.advance()
-                        subName = self.tokenizer.identifier()
-                        self.tokenizer.advance()
-                        self.tokenizer.advance()
-                        nArgs = self.compileExpressionList()
-                        self.tokenizer.advance()
-                        if flag: self.writer.writeCall(name + "." + subName,nArgs)
-                        else:
-                            clsName = self.subroutineSymbolTable.typeOf(name)
-                            nArgs = str(int(nArgs) + 1)
-                            self.writer.writeCall(clsName + "." + subName,nArgs)
-
-                    elif self.tokenizer.symbol() == "(":
-
-                        funcName = self.classSymbolTable.name + "." + name
-                        self.tokenizer.advance()
-                        if name in self.methodList: self.writer.writePush("pointer","0")
-                        nArgs = self.compileExpressionList()
-                        self.tokenizer.advance()
-                        if name in self.methodList:  nArgs = str(int(nArgs)+1)
-                        self.writer.writeCall(funcName,nArgs)
+                    if name in self.methodList: self.writer.writePush("pointer","0")
+                    nArgs = self.compileExpressionList()
+                    self.tokenizer.advance()
+                    if name in self.methodList:  nArgs = str(int(nArgs)+1)
+                    self.writer.writeCall(funcName,nArgs)
 
 
        
