@@ -2,6 +2,19 @@ import glob
 import sys
 from Tokenizer import *
 
+class Lable():
+
+    def __init__(self):
+        self.lableCounter = 0
+        self.lable = str(self.lableCounter)
+
+    def getLable(self):  return self.lable
+
+    def updateLable(self): 
+        self.lableCounter = self.lableCounter + 1
+        self.lable = str(self.lableCounter)
+
+
 
 class SymbolTable:
 
@@ -105,12 +118,13 @@ class VMWriter():
 
 class CompilationEngine():
 
-    def __init__(self,file,tokenizer,writer):
+    def __init__(self,file,tokenizer,writer,labler):
         self.tokenizer = tokenizer
         self.writer = writer
         self.classSymbolTable = SymbolTable()
         self.subroutineSymbolTable = SymbolTable()
         self.subroutineSymbolTable.setParent(self.classSymbolTable)
+        self.lable = 
         self.compileClass()
 
     def compileClass(self):
@@ -128,9 +142,6 @@ class CompilationEngine():
         while self.tokenizer.keyWord() == "function" or self.tokenizer.keyWord() == "constructor" or self.tokenizer.keyWord() == "method":
             self.compileClassSubroutineDec()
             self.tokenizer.advance()
-
-    def isVar(self,kind,index):
-        pass
 
     def compileClassVarDec(self):
 
@@ -251,32 +262,55 @@ class CompilationEngine():
             self.tokenizer.advance()
 
         self.compileExpression()
-
+        self.writer.writeArithmetic("~")
+        lable1 = self.lable.getLable()
+        self.lable.updateLable() 
+        self.writer.writeIf(lable1)
+        
         for i in range(2):
             self.tokenizer.advance()
 
         self.compileStatements()
-
+        
         self.tokenizer.advance()
 
         if self.tokenizer.keyWord() == "else":
+            lable2 = self.lable.getLable()
+            self.lable.updateLable() 
+            self.writer.writeGoto(lable2)
+            self.writer.writeLable(lable1)
             for i in range(2):
                 self.tokenizer.advance()
             self.compileStatements()
             self.tokenizer.advance()
-
+            self.writer.writeLable(lable2)
+        else:
+            self.writer.writeIf(lable1)
 
     def compileWhile(self):
         for i in range(2):
             self.tokenizer.advance()
 
+        lable1 = self.lable.getLable()
+        self.lable.updateLable()
+
+        self.writer.writeLable(lable1)
+
         self.compileExpression()
+
+        self.writer.writeArithmetic("~")
+        lable2 = self.lable.getLable()
+        self.lable.updateLable()
+
+        self.writer.writeIf(lable2)
 
         for i in range(2):
             self.tokenizer.advance()
 
         self.compileStatements()
 
+        self.writer.writeGoto(lable1)
+        self.writer.writeLable(lable2)
 
     def compileDo(self):
         
@@ -354,6 +388,8 @@ class CompilationEngine():
                 elif self.tokenizer.tokenType() == "stringConstant":
                     self.tokenizer.advance()
                 elif self.tokenizer.keyWord() in keywordConstants:
+                    if self.tokenizer.keyWord() == "this":
+
                     self.tokenizer.advance()
                 elif self.tokenizer.symbol() in unaryOp:
                      sym = self.tokenizer.symbol()
@@ -415,11 +451,12 @@ class Analyzer():
         else: [self.files.append(fn) for fn in glob.iglob(self.path+"/*.jack")]
         
     def analyze(self):
+        labler = Lable()
         for fp in self.files:
             tokenizer = Tokenizer(fp)
             tokenizer.tokenize()
             vmWrite = VMWriter(fp)
-            CompilationEngine(fp,tokenizer,vmWrite)
+            CompilationEngine(fp,tokenizer,vmWrite,labler)
 
     
 
