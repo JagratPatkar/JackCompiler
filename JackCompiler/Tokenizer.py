@@ -14,7 +14,8 @@ class Tokenizer():
         newFileName = file.split("/").pop().split(".")[0] + "T.xml"
         outputFilePath = file.replace(file.split("/").pop(),newFileName)
         self.input = open(file,"r")
-        self.output = open(outputFilePath,"w")
+        self.output = None
+        # self.output = open(outputFilePath,"w")
         self.tokens = []
         self.currentToken = -1
         
